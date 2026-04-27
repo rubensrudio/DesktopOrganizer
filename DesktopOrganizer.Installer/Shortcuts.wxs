@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <!--
+    Start Menu shortcut for DesktopOrganizer.App.exe.
+    The shortcut is owned by a Component anchored at the Start Menu folder so
+    Windows Installer cleans it up on uninstall together with the registry
+    breadcrumb required by ICE38/ICE43 for shortcut components.
+  -->
+  <Fragment>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="DesktopOrganizerMenuFolderRef" Name="DesktopOrganizer">
+        <Component Id="ApplicationStartMenuShortcut" Guid="A6E7C2B4-8D14-4F93-9C2A-7F1B5E4A0D27">
+          <Shortcut Id="DesktopOrganizerStartMenuShortcut"
+                    Name="DesktopOrganizer"
+                    Description="Capture and restore Windows desktop layouts"
+                    Target="[INSTALLFOLDER]DesktopOrganizer.App.exe"
+                    WorkingDirectory="INSTALLFOLDER" />
+          <RemoveFolder Id="RemoveDesktopOrganizerMenuFolder" On="uninstall" />
+          <RegistryValue Root="HKCU"
+                         Key="Software\RubensRudio\DesktopOrganizer"
+                         Name="StartMenuShortcutInstalled"
+                         Type="integer"
+                         Value="1"
+                         KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <ComponentGroup Id="ApplicationShortcuts">
+      <ComponentRef Id="ApplicationStartMenuShortcut" />
+    </ComponentGroup>
+  </Fragment>
+
+</Wix>

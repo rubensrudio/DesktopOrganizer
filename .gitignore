@@ -1,0 +1,22 @@
+# .NET build outputs
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Rider / VS Code
+.idea/
+.vscode/
+
+# Publish
+publish/
+*.pdb
+
+# NuGet
+*.nupkg
+packages/
+
+# Claude / specs
+.claude/
+.specs/
