@@ -15,6 +15,8 @@ public class AppDataPaths
     private const string ProfilesFolderName = "profiles";
     private const string SnapshotsFolderName = "snapshots";
     private const string ProfileFileName = "profile.json";
+    private const string SnapshotFilePrefix = "snapshot-";
+    private const string SnapshotFileExtension = ".json";
 
     private readonly string _rootPath;
 
@@ -120,5 +122,48 @@ public class AppDataPaths
         var path = GetSnapshotsDirectory(profileId);
         Directory.CreateDirectory(path);
         return path;
+    }
+
+    /// <summary>
+    /// Caminho do arquivo de snapshot dentro do diretório de snapshots do
+    /// perfil
+    /// (<c>...\&lt;profileId&gt;\snapshots\snapshot-&lt;snapshotId&gt;.json</c>).
+    /// Não cria o diretório.
+    /// </summary>
+    public string GetSnapshotFilePath(Guid profileId, Guid snapshotId)
+    {
+        var fileName = SnapshotFilePrefix + snapshotId + SnapshotFileExtension;
+        return Path.Combine(GetSnapshotsDirectory(profileId), fileName);
+    }
+
+    /// <summary>
+    /// Padrão de busca para localizar arquivos de snapshot dentro de um
+    /// diretório de snapshots (<c>snapshot-*.json</c>).
+    /// </summary>
+    public static string SnapshotSearchPattern =>
+        SnapshotFilePrefix + "*" + SnapshotFileExtension;
+
+    /// <summary>
+    /// Tenta extrair o <see cref="Guid"/> de um arquivo de snapshot a partir
+    /// do nome do arquivo (formato <c>snapshot-&lt;guid&gt;.json</c>).
+    /// </summary>
+    public static bool TryParseSnapshotIdFromFileName(
+        string fileName,
+        out Guid snapshotId)
+    {
+        snapshotId = Guid.Empty;
+        if (string.IsNullOrEmpty(fileName))
+        {
+            return false;
+        }
+
+        var name = Path.GetFileNameWithoutExtension(fileName);
+        if (!name.StartsWith(SnapshotFilePrefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var rawId = name.Substring(SnapshotFilePrefix.Length);
+        return Guid.TryParse(rawId, out snapshotId);
     }
 }
