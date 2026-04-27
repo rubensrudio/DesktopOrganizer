@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
+using DesktopOrganizer.App.Views;
 using DesktopOrganizer.Core.Domain;
 using DesktopOrganizer.Core.Services;
 using DesktopOrganizer.Core.UseCases;
@@ -183,8 +184,31 @@ internal sealed class TrayIconController : IDisposable
 
     private async Task CaptureSnapshotAsync()
     {
-        // Nome auto-gerado neste passo; TASK-020 substitui por diálogo.
-        var name = "Snapshot " + DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm");
+        // TASK-020: pede o nome via diálogo modal. ShowDialog precisa rodar
+        // no UI thread; este handler já é invocado pela UI (Click no menu),
+        // então estamos no thread certo.
+        string name;
+        try
+        {
+            var dlg = new SnapshotNameDialog
+            {
+                Owner = WpfApplication.Current?.Windows.Count > 0
+                    ? WpfApplication.Current.MainWindow
+                    : null,
+            };
+            if (dlg.ShowDialog() != true)
+            {
+                // Usuário cancelou — aborta captura silenciosamente.
+                return;
+            }
+            name = dlg.SnapshotName;
+        }
+        catch (Exception ex)
+        {
+            ShowError("Falha ao abrir diálogo de snapshot", ex.Message);
+            return;
+        }
+
         try
         {
             var useCase = _serviceProvider.GetRequiredService<CaptureSnapshotUseCase>();
@@ -194,6 +218,10 @@ internal sealed class TrayIconController : IDisposable
         {
             ShowError("Falha ao salvar snapshot", ex.Message);
         }
+
+        // TODO: deleção de perfil — reutilizar MessageBox.Show nativo
+        // (MessageBoxButton.YesNo + MessageBoxImage.Warning). Capacidade
+        // ainda não exposta no menu; tratar em iteração futura.
     }
 
     private async Task RestoreSnapshotAsync(Snapshot snapshot)
