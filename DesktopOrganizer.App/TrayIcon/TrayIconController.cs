@@ -62,6 +62,13 @@ internal sealed class TrayIconController : IDisposable
         // Recria o menu a cada abertura: estado de snapshots/perfis muda
         // entre cliques e queremos sempre a foto fresca do disco.
         _taskbarIcon.ContextMenu!.Opened += OnContextMenuOpened;
+
+        // Vincula o tray ao TrayNotificationService — agora qualquer use
+        // case que dispare ShowSuccess/ShowResult exibirá balloon real
+        // (TASK-021). Resolvido pelo tipo concreto, mas a mesma instância
+        // está registrada como ITrayNotificationService no DI.
+        var notifications = _serviceProvider.GetRequiredService<TrayNotificationService>();
+        notifications.Bind(_taskbarIcon);
     }
 
     private void OnContextMenuOpened(object sender, RoutedEventArgs e)
@@ -257,6 +264,19 @@ internal sealed class TrayIconController : IDisposable
 
         try
         {
+            // Solta a referência ao ícone no notification service ANTES de
+            // dispor o TaskbarIcon, evitando que uma notificação tardia
+            // tente usar handle inválido.
+            try
+            {
+                var notifications = _serviceProvider.GetService<TrayNotificationService>();
+                notifications?.Unbind();
+            }
+            catch
+            {
+                // Service provider pode já ter sido disposto; ignorar.
+            }
+
             if (_taskbarIcon is not null)
             {
                 if (_taskbarIcon.ContextMenu is not null)
