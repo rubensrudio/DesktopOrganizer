@@ -24,7 +24,7 @@ namespace DesktopOrganizer.Infrastructure.Win32;
 /// silenciosamente puladas — DORG-01 AC6 exige que a captura não aborte por
 /// causa de uma janela individual.
 /// </summary>
-internal sealed class Win32WindowCaptureService : IWindowCaptureService
+public sealed class Win32WindowCaptureService : IWindowCaptureService
 {
     private readonly IVirtualDesktopManager _virtualDesktopManager;
 
