@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -169,10 +171,92 @@ internal sealed class TrayIconController : IDisposable
 
         menu.Items.Add(new Separator());
 
-        // 4) Sair
+        // 4) Restaurar ao iniciar Windows (TASK-022)
+        // Estado lido em tempo real do Registry via IStartupService — não
+        // confiamos apenas em AppConfig.StartupEnabled porque o usuário pode
+        // editar a chave do Registry por fora; a config é só espelho persistido.
+        var startupService = _serviceProvider.GetRequiredService<IStartupService>();
+        var startupItem = new MenuItem
+        {
+            Header = "Restaurar ao iniciar Windows",
+            IsCheckable = true,
+            IsChecked = startupService.IsEnabled(),
+        };
+        startupItem.Click += async (_, _) => await ToggleStartupAsync().ConfigureAwait(false);
+        menu.Items.Add(startupItem);
+
+        menu.Items.Add(new Separator());
+
+        // 5) Sair
         var exitItem = new MenuItem { Header = "Sair" };
         exitItem.Click += (_, _) => WpfApplication.Current?.Shutdown();
         menu.Items.Add(exitItem);
+    }
+
+    private async Task ToggleStartupAsync()
+    {
+        try
+        {
+            var startupService = _serviceProvider.GetRequiredService<IStartupService>();
+            var configRepo = _serviceProvider.GetRequiredService<IConfigRepository>();
+
+            // Estado ANTES do toggle: WPF já alterou o IsChecked do MenuItem,
+            // mas a fonte da verdade aqui é o Registry — se IsEnabled() == true
+            // significa que a chave existe e queremos removê-la (toggle off).
+            var currentlyEnabled = startupService.IsEnabled();
+
+            if (currentlyEnabled)
+            {
+                startupService.Disable();
+            }
+            else
+            {
+                var executablePath = ResolveExecutablePath();
+                if (string.IsNullOrWhiteSpace(executablePath))
+                {
+                    ShowError(
+                        "Falha ao habilitar inicialização",
+                        "Não foi possível resolver o caminho do executável.");
+                    return;
+                }
+                startupService.Enable(executablePath);
+            }
+
+            // Persiste o espelho na AppConfig para refletir o estado autoritativo
+            // do Registry após a operação.
+            var config = await configRepo.LoadAsync().ConfigureAwait(false);
+            config.StartupEnabled = startupService.IsEnabled();
+            await configRepo.SaveAsync(config).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            ShowError("Falha ao alterar inicialização com Windows", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Resolve o caminho do executável atual. Em apps publicados como
+    /// single-file ou self-contained, <c>Process.MainModule.FileName</c>
+    /// aponta para o .exe correto (não para o dotnet host), que é o que
+    /// queremos registrar no autostart.
+    /// </summary>
+    private static string ResolveExecutablePath()
+    {
+        try
+        {
+            var mainModule = Process.GetCurrentProcess().MainModule;
+            var path = mainModule?.FileName;
+            if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+            {
+                return path!;
+            }
+        }
+        catch
+        {
+            // Fallback abaixo cobre cenários onde MainModule é inacessível
+            // (raro, mas pode ocorrer em sandboxes).
+        }
+        return Environment.ProcessPath ?? string.Empty;
     }
 
     private static string FormatSnapshotLabel(Snapshot snap)
