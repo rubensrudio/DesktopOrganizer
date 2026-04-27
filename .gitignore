@@ -16,3 +16,7 @@ publish/
 # NuGet
 *.nupkg
 packages/
+
+# Claude / specs
+.claude/
+.specs/
