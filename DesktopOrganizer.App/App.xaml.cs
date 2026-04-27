@@ -59,6 +59,18 @@ public partial class App : WpfApplication
     {
         base.OnStartup(e);
 
+        // 0) Verificação de versão mínima do Windows (L1: Windows 11 = build 22000+).
+        if (Environment.OSVersion.Version.Build < 22000)
+        {
+            System.Windows.MessageBox.Show(
+                "DesktopOrganizer requer Windows 11 ou superior.",
+                "Sistema incompatível",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
+            Current.Shutdown();
+            return;
+        }
+
         // 1) Single-instance guard. Se outra instância já segura o mutex,
         // encerramos sem inicializar nada — sem mensagem ruidosa.
         _singleInstanceMutex = new Mutex(initiallyOwned: true, name: SingleInstanceMutexName, out var createdNew);
