@@ -359,11 +359,21 @@ internal sealed class TrayIconController : IDisposable
     /// </summary>
     private static System.Windows.Media.ImageSource BuildPlaceholderIconSource()
     {
+        // H.NotifyIcon não suporta InteropBitmap (retorno de CreateBitmapSourceFromHIcon).
+        // Convertemos para PNG em memória e carregamos como BitmapImage (suportado).
         using var icon = SystemIcons.Application;
-        return Imaging.CreateBitmapSourceFromHIcon(
-            icon.Handle,
-            System.Windows.Int32Rect.Empty,
-            System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
+        using var bitmap = icon.ToBitmap();
+        using var ms = new System.IO.MemoryStream();
+        bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+        ms.Position = 0;
+
+        var bitmapImage = new System.Windows.Media.Imaging.BitmapImage();
+        bitmapImage.BeginInit();
+        bitmapImage.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+        bitmapImage.StreamSource = ms;
+        bitmapImage.EndInit();
+        bitmapImage.Freeze();
+        return bitmapImage;
     }
 
     public void Dispose()
