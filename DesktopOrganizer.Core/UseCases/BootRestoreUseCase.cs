@@ -22,20 +22,24 @@ public sealed class BootRestoreUseCase
     private readonly IConfigRepository _configRepository;
     private readonly ISnapshotRepository _snapshotRepository;
     private readonly RestoreSnapshotUseCase _restoreUseCase;
+    private readonly ITrayNotificationService _notificationService;
 
     public BootRestoreUseCase(
         IConfigRepository configRepository,
         ISnapshotRepository snapshotRepository,
-        RestoreSnapshotUseCase restoreUseCase)
+        RestoreSnapshotUseCase restoreUseCase,
+        ITrayNotificationService notificationService)
     {
         _configRepository = configRepository ?? throw new ArgumentNullException(nameof(configRepository));
         _snapshotRepository = snapshotRepository ?? throw new ArgumentNullException(nameof(snapshotRepository));
         _restoreUseCase = restoreUseCase ?? throw new ArgumentNullException(nameof(restoreUseCase));
+        _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
     }
 
     /// <summary>
-    /// Executa a restauração de boot, se configurada. Não lança quando o
-    /// snapshot de boot não está configurado ou foi deletado.
+    /// Executa a restauração de boot, se configurada. Quando o snapshot
+    /// configurado foi deletado (L5), notifica o usuário e não restaura — o
+    /// usuário deve abrir o aplicativo e selecionar/criar outro snapshot.
     /// </summary>
     public async Task ExecuteAsync(CancellationToken ct = default)
     {
@@ -54,6 +58,8 @@ public sealed class BootRestoreUseCase
 
         if (snapshot is null)
         {
+            _notificationService.ShowSuccess(
+                "Snapshot de boot não encontrado. Abra o aplicativo e selecione ou crie outro snapshot.");
             return;
         }
 

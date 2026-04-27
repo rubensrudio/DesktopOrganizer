@@ -32,7 +32,7 @@ public class BootRestoreUseCaseTests
             _notificationService,
             _configRepository);
 
-        return new BootRestoreUseCase(_configRepository, _snapshotRepository, restoreUseCase);
+        return new BootRestoreUseCase(_configRepository, _snapshotRepository, restoreUseCase, _notificationService);
     }
 
     [Fact]
@@ -121,5 +121,7 @@ public class BootRestoreUseCaseTests
             .DidNotReceive()
             .RestoreWindowAsync(Arg.Any<WindowEntry>(), Arg.Any<CancellationToken>());
         _notificationService.DidNotReceive().ShowResult(Arg.Any<int>(), Arg.Any<int>());
+        // L5: usuário deve ser informado para abrir o app e selecionar/criar outro snapshot
+        _notificationService.Received(1).ShowSuccess(Arg.Is<string>(s => s.Contains("não encontrado")));
     }
 }
