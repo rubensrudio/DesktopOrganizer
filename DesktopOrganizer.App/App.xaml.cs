@@ -55,9 +55,38 @@ public partial class App : WpfApplication
     private ServiceProvider? _serviceProvider;
     private TrayIconController? _trayController;
 
+    private static readonly string CrashLogPath = System.IO.Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "DesktopOrganizer",
+        "crash.log");
+
+    private static void LogCrash(string source, Exception? ex)
+    {
+        try
+        {
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(CrashLogPath)!);
+            System.IO.File.AppendAllText(CrashLogPath,
+                $"[{DateTimeOffset.Now:O}] {source}\n{ex}\n\n");
+        }
+        catch { }
+    }
+
     protected override async void OnStartup(WpfStartupEventArgs e)
     {
         base.OnStartup(e);
+
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            LogCrash("AppDomain.UnhandledException", args.ExceptionObject as Exception);
+        DispatcherUnhandledException += (_, args) =>
+        {
+            LogCrash("Dispatcher.UnhandledException", args.Exception);
+            args.Handled = true; // prevent crash
+        };
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            LogCrash("TaskScheduler.UnobservedTaskException", args.Exception);
+            args.SetObserved();
+        };
 
         // 0) Verificação de versão mínima do Windows (L1: Windows 11 = build 22000+).
         if (Environment.OSVersion.Version.Build < 22000)
