@@ -56,20 +56,19 @@ internal sealed class TrayIconController : IDisposable
         _taskbarIcon = new TaskbarIcon
         {
             ToolTipText = "DesktopOrganizer",
-            IconSource = BuildPlaceholderIconSource(),
+            // Icon (System.Drawing.Icon) — passa direto sem conversão ImageSource,
+            // evitando bug de InteropBitmap/UriSource em H.NotifyIcon 2.4.1.
+            Icon = (System.Drawing.Icon)SystemIcons.Application.Clone(),
             ContextMenu = new ContextMenu(),
-            // Garante que o menu abra ancorado no tray e não fique órfão.
             NoLeftClickDelay = true,
         };
 
-        // Recria o menu a cada abertura: estado de snapshots/perfis muda
-        // entre cliques e queremos sempre a foto fresca do disco.
+        // ForceCreate garante registro do NotifyIcon no Win32 imediatamente
+        // (sem isso, ícone pode não aparecer dependendo de quando o dispatcher idle).
+        _taskbarIcon.ForceCreate(enablesEfficiencyMode: false);
+
         _taskbarIcon.ContextMenu!.Opened += OnContextMenuOpened;
 
-        // Vincula o tray ao TrayNotificationService — agora qualquer use
-        // case que dispare ShowSuccess/ShowResult exibirá balloon real
-        // (TASK-021). Resolvido pelo tipo concreto, mas a mesma instância
-        // está registrada como ITrayNotificationService no DI.
         var notifications = _serviceProvider.GetRequiredService<TrayNotificationService>();
         notifications.Bind(_taskbarIcon);
     }
