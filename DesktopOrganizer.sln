@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopOrganizer.Core", "De
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopOrganizer.Infrastructure", "DesktopOrganizer.Infrastructure\DesktopOrganizer.Infrastructure.csproj", "{F13DEEE8-3FC4-4387-8832-C12ACE191429}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopOrganizer.Installer", "DesktopOrganizer.Installer\DesktopOrganizer.Installer.csproj", "{649B5005-E5D3-499E-A6B6-236692032DD5}"
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "DesktopOrganizer.Installer", "DesktopOrganizer.Installer\DesktopOrganizer.Installer.wixproj", "{649B5005-E5D3-499E-A6B6-236692032DD5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopOrganizer.Tests", "DesktopOrganizer.Tests\DesktopOrganizer.Tests.csproj", "{9ABBB65B-20B5-4550-B359-73FB97EFD833}"
 EndProject

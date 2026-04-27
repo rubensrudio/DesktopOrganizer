@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <!--
+    DesktopOrganizer MSI Package definition.
+    UpgradeCode is a stable GUID used by Windows Installer to identify the product
+    family across versions. NEVER change it once published.
+
+    Files are listed explicitly because WiX 4.0.x does not ship the <Files>
+    auto-harvesting element (added in WiX 5) and HarvestDirectory requires the
+    Heat extension which is not part of WixToolset.Sdk by default. Each file
+    component carries a stable, hand-assigned GUID so upgrades reuse the same
+    component identity. Add new files here when the App grows new runtime deps.
+  -->
+  <Package Name="DesktopOrganizer"
+           Manufacturer="Rubens Rudio"
+           Version="1.0.0.0"
+           UpgradeCode="6D3F1B8E-4F9A-4F27-9C3E-2A6E1B8F0A11"
+           Compressed="yes"
+           Scope="perMachine">
+
+    <!-- Block downgrade installs and provide a friendly error. -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+
+    <!-- Single embedded cab to ship as a self-contained .msi. -->
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Application install location: %ProgramFiles%\DesktopOrganizer\ -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="DesktopOrganizer" />
+    </StandardDirectory>
+
+    <!-- Main feature aggregating all components. -->
+    <Feature Id="MainFeature" Title="DesktopOrganizer" Level="1">
+      <ComponentGroupRef Id="ApplicationFiles" />
+      <ComponentGroupRef Id="ApplicationShortcuts" />
+    </Feature>
+
+  </Package>
+
+  <!--
+    Application binaries harvested from the App project's TargetDir.
+    $(var.DesktopOrganizer.App.TargetDir) is provided automatically by MSBuild
+    because the .wixproj declares a ProjectReference to DesktopOrganizer.App.
+  -->
+  <Fragment>
+    <ComponentGroup Id="ApplicationFiles" Directory="INSTALLFOLDER">
+
+      <Component Id="MainExecutable" Guid="A1B2C3D4-0001-4F00-9000-000000000001" Bitness="always64">
+        <File Id="DesktopOrganizerAppExe"
+              Source="$(var.DesktopOrganizer.App.TargetDir)DesktopOrganizer.App.exe"
+              KeyPath="yes" />
+      </Component>
+
+      <Component Id="AppDll" Guid="A1B2C3D4-0001-4F00-9000-000000000002" Bitness="always64">
+        <File Source="$(var.DesktopOrganizer.App.TargetDir)DesktopOrganizer.App.dll" KeyPath="yes" />
+      </Component>
+
+      <Component Id="AppDepsJson" Guid="A1B2C3D4-0001-4F00-9000-000000000003" Bitness="always64">
+        <File Source="$(var.DesktopOrganizer.App.TargetDir)DesktopOrganizer.App.deps.json" KeyPath="yes" />
+      </Component>
+
+      <Component Id="AppRuntimeConfig" Guid="A1B2C3D4-0001-4F00-9000-000000000004" Bitness="always64">
+        <File Source="$(var.DesktopOrganizer.App.TargetDir)DesktopOrganizer.App.runtimeconfig.json" KeyPath="yes" />
+      </Component>
+
+      <Component Id="CoreDll" Guid="A1B2C3D4-0001-4F00-9000-000000000005" Bitness="always64">
+        <File Source="$(var.DesktopOrganizer.App.TargetDir)DesktopOrganizer.Core.dll" KeyPath="yes" />
+      </Component>
+
+      <Component Id="InfrastructureDll" Guid="A1B2C3D4-0001-4F00-9000-000000000006" Bitness="always64">
+        <File Source="$(var.DesktopOrganizer.App.TargetDir)DesktopOrganizer.Infrastructure.dll" KeyPath="yes" />
+      </Component>
+
+      <Component Id="HNotifyIconDll" Guid="A1B2C3D4-0001-4F00-9000-000000000007" Bitness="always64">
+        <File Source="$(var.DesktopOrganizer.App.TargetDir)H.NotifyIcon.dll" KeyPath="yes" />
+      </Component>
+
+      <Component Id="HNotifyIconWpfDll" Guid="A1B2C3D4-0001-4F00-9000-000000000008" Bitness="always64">
+        <File Source="$(var.DesktopOrganizer.App.TargetDir)H.NotifyIcon.Wpf.dll" KeyPath="yes" />
+      </Component>
+
+      <Component Id="HGeneratedIconsDll" Guid="A1B2C3D4-0001-4F00-9000-000000000009" Bitness="always64">
+        <File Source="$(var.DesktopOrganizer.App.TargetDir)H.GeneratedIcons.System.Drawing.dll" KeyPath="yes" />
+      </Component>
+
+      <Component Id="DiAbstractionsDll" Guid="A1B2C3D4-0001-4F00-9000-00000000000A" Bitness="always64">
+        <File Source="$(var.DesktopOrganizer.App.TargetDir)Microsoft.Extensions.DependencyInjection.Abstractions.dll" KeyPath="yes" />
+      </Component>
+
+      <Component Id="DiDll" Guid="A1B2C3D4-0001-4F00-9000-00000000000B" Bitness="always64">
+        <File Source="$(var.DesktopOrganizer.App.TargetDir)Microsoft.Extensions.DependencyInjection.dll" KeyPath="yes" />
+      </Component>
+
+      <Component Id="SystemEventsDll" Guid="A1B2C3D4-0001-4F00-9000-00000000000C" Bitness="always64">
+        <File Source="$(var.DesktopOrganizer.App.TargetDir)Microsoft.Win32.SystemEvents.dll" KeyPath="yes" />
+      </Component>
+
+      <Component Id="SystemDrawingCommonDll" Guid="A1B2C3D4-0001-4F00-9000-00000000000D" Bitness="always64">
+        <File Source="$(var.DesktopOrganizer.App.TargetDir)System.Drawing.Common.dll" KeyPath="yes" />
+      </Component>
+
+      <Component Id="SystemPrivateWindowsCoreDll" Guid="A1B2C3D4-0001-4F00-9000-00000000000E" Bitness="always64">
+        <File Source="$(var.DesktopOrganizer.App.TargetDir)System.Private.Windows.Core.dll" KeyPath="yes" />
+      </Component>
+
+      <Component Id="SystemPrivateWindowsGdiPlusDll" Guid="A1B2C3D4-0001-4F00-9000-00000000000F" Bitness="always64">
+        <File Source="$(var.DesktopOrganizer.App.TargetDir)System.Private.Windows.GdiPlus.dll" KeyPath="yes" />
+      </Component>
+
+    </ComponentGroup>
+  </Fragment>
+
+</Wix>
