@@ -15,16 +15,16 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0"
+        <TextBlock x:Name="NameLabel"
+                   Grid.Row="0"
                    Text="Nome do snapshot:"
-                   Margin="0,0,0,6"
-                   AutomationProperties.Name="Nome do snapshot" />
+                   Margin="0,0,0,6" />
 
         <TextBox x:Name="NameTextBox"
                  Grid.Row="1"
                  Padding="6,4"
                  KeyDown="NameTextBox_KeyDown"
-                 AutomationProperties.LabeledBy="{Binding ElementName=NameTextBox}" />
+                 AutomationProperties.LabeledBy="{Binding ElementName=NameLabel}" />
 
         <StackPanel Grid.Row="2"
                     Orientation="Horizontal"

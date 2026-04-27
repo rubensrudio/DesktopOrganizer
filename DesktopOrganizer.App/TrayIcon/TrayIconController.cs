@@ -56,20 +56,19 @@ internal sealed class TrayIconController : IDisposable
         _taskbarIcon = new TaskbarIcon
         {
             ToolTipText = "DesktopOrganizer",
-            IconSource = BuildPlaceholderIconSource(),
+            // Icon (System.Drawing.Icon) — passa direto sem conversão ImageSource,
+            // evitando bug de InteropBitmap/UriSource em H.NotifyIcon 2.4.1.
+            Icon = (System.Drawing.Icon)SystemIcons.Application.Clone(),
             ContextMenu = new ContextMenu(),
-            // Garante que o menu abra ancorado no tray e não fique órfão.
             NoLeftClickDelay = true,
         };
 
-        // Recria o menu a cada abertura: estado de snapshots/perfis muda
-        // entre cliques e queremos sempre a foto fresca do disco.
+        // ForceCreate garante registro do NotifyIcon no Win32 imediatamente
+        // (sem isso, ícone pode não aparecer dependendo de quando o dispatcher idle).
+        _taskbarIcon.ForceCreate(enablesEfficiencyMode: false);
+
         _taskbarIcon.ContextMenu!.Opened += OnContextMenuOpened;
 
-        // Vincula o tray ao TrayNotificationService — agora qualquer use
-        // case que dispare ShowSuccess/ShowResult exibirá balloon real
-        // (TASK-021). Resolvido pelo tipo concreto, mas a mesma instância
-        // está registrada como ITrayNotificationService no DI.
         var notifications = _serviceProvider.GetRequiredService<TrayNotificationService>();
         notifications.Bind(_taskbarIcon);
     }
@@ -274,12 +273,22 @@ internal sealed class TrayIconController : IDisposable
         string name;
         try
         {
-            var dlg = new SnapshotNameDialog
+            var dlg = new SnapshotNameDialog();
+            // App é tray-only, sem MainWindow visível. Tentar setar Owner numa
+            // janela não-shown lança "Cannot set Owner Property to a Window that
+            // has not been shown previously". Só atribui se houver janela exibida.
+            var ownerCandidate = WpfApplication.Current?.Windows
+                .OfType<System.Windows.Window>()
+                .FirstOrDefault(w => w.IsLoaded && w.IsVisible);
+            if (ownerCandidate is not null)
             {
-                Owner = WpfApplication.Current?.Windows.Count > 0
-                    ? WpfApplication.Current.MainWindow
-                    : null,
-            };
+                dlg.Owner = ownerCandidate;
+            }
+            else
+            {
+                dlg.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen;
+                dlg.Topmost = true;
+            }
             if (dlg.ShowDialog() != true)
             {
                 // Usuário cancelou — aborta captura silenciosamente.
@@ -359,11 +368,26 @@ internal sealed class TrayIconController : IDisposable
     /// </summary>
     private static System.Windows.Media.ImageSource BuildPlaceholderIconSource()
     {
-        using var icon = SystemIcons.Application;
-        return Imaging.CreateBitmapSourceFromHIcon(
-            icon.Handle,
-            System.Windows.Int32Rect.Empty,
-            System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
+        // H.NotifyIcon exige BitmapImage com UriSource (não StreamSource).
+        // Escrevemos um .ico do SystemIcons.Application em arquivo temp e
+        // retornamos BitmapImage apontando pra ele.
+        var tempPath = System.IO.Path.Combine(
+            System.IO.Path.GetTempPath(),
+            "DesktopOrganizer-tray-icon.ico");
+
+        if (!System.IO.File.Exists(tempPath))
+        {
+            using var fs = new System.IO.FileStream(tempPath, System.IO.FileMode.Create);
+            SystemIcons.Application.Save(fs);
+        }
+
+        var bitmapImage = new System.Windows.Media.Imaging.BitmapImage();
+        bitmapImage.BeginInit();
+        bitmapImage.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+        bitmapImage.UriSource = new Uri(tempPath, UriKind.Absolute);
+        bitmapImage.EndInit();
+        bitmapImage.Freeze();
+        return bitmapImage;
     }
 
     public void Dispose()

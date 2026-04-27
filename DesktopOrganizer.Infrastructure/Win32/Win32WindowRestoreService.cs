@@ -133,7 +133,32 @@ public sealed class Win32WindowRestoreService : IWindowRestoreService
 
                 if (handle != IntPtr.Zero)
                 {
-                    return ApplyPositioning(entry, handle);
+                    // Apps modernos (Chrome, VS Code, Teams) abrem splash/loading
+                    // primeiro e depois trocam pra janela real. Esperar um pouco
+                    // e re-obter MainWindowHandle pega o handle final estável,
+                    // evitando reposicionar uma janela transitória.
+                    try { await Task.Delay(TimeSpan.FromMilliseconds(1500), effectiveCt).ConfigureAwait(false); }
+                    catch (OperationCanceledException) { /* segue com handle atual */ }
+
+                    try { launched.Refresh(); } catch { }
+                    IntPtr finalHandle;
+                    try { finalHandle = launched.MainWindowHandle; } catch { finalHandle = handle; }
+                    if (finalHandle == IntPtr.Zero) finalHandle = handle;
+
+                    var result = ApplyPositioning(entry, finalHandle);
+
+                    // Re-aplicar posição depois de mais 1s — alguns apps continuam
+                    // ajustando layout interno após primeiro paint e desfazem nosso
+                    // SetWindowPos. Aplicar 2x estabiliza posição.
+                    try { await Task.Delay(TimeSpan.FromMilliseconds(1000), effectiveCt).ConfigureAwait(false); }
+                    catch (OperationCanceledException) { return result; }
+                    try { launched.Refresh(); } catch { }
+                    IntPtr settledHandle;
+                    try { settledHandle = launched.MainWindowHandle; } catch { settledHandle = finalHandle; }
+                    if (settledHandle == IntPtr.Zero) settledHandle = finalHandle;
+                    ApplyPositioning(entry, settledHandle);
+
+                    return result;
                 }
 
                 try
