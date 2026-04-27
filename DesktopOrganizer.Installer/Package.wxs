@@ -14,7 +14,7 @@
   -->
   <Package Name="DesktopOrganizer"
            Manufacturer="Rubens Rudio"
-           Version="1.0.1.0"
+           Version="1.0.2.0"
            UpgradeCode="6D3F1B8E-4F9A-4F27-9C3E-2A6E1B8F0A11"
            Compressed="yes"
            Scope="perMachine">

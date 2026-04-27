@@ -359,18 +359,23 @@ internal sealed class TrayIconController : IDisposable
     /// </summary>
     private static System.Windows.Media.ImageSource BuildPlaceholderIconSource()
     {
-        // H.NotifyIcon não suporta InteropBitmap (retorno de CreateBitmapSourceFromHIcon).
-        // Convertemos para PNG em memória e carregamos como BitmapImage (suportado).
-        using var icon = SystemIcons.Application;
-        using var bitmap = icon.ToBitmap();
-        using var ms = new System.IO.MemoryStream();
-        bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-        ms.Position = 0;
+        // H.NotifyIcon exige BitmapImage com UriSource (não StreamSource).
+        // Escrevemos um .ico do SystemIcons.Application em arquivo temp e
+        // retornamos BitmapImage apontando pra ele.
+        var tempPath = System.IO.Path.Combine(
+            System.IO.Path.GetTempPath(),
+            "DesktopOrganizer-tray-icon.ico");
+
+        if (!System.IO.File.Exists(tempPath))
+        {
+            using var fs = new System.IO.FileStream(tempPath, System.IO.FileMode.Create);
+            SystemIcons.Application.Save(fs);
+        }
 
         var bitmapImage = new System.Windows.Media.Imaging.BitmapImage();
         bitmapImage.BeginInit();
         bitmapImage.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-        bitmapImage.StreamSource = ms;
+        bitmapImage.UriSource = new Uri(tempPath, UriKind.Absolute);
         bitmapImage.EndInit();
         bitmapImage.Freeze();
         return bitmapImage;
