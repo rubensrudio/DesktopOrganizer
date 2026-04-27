@@ -33,7 +33,7 @@ namespace DesktopOrganizer.Infrastructure.Win32;
 ///    c) <see cref="Win32Interop.ShowWindow"/> conforme <see cref="WindowState"/>:
 ///       Normal → SW_RESTORE; Maximized → SW_MAXIMIZE; Minimized → SW_MINIMIZE.
 /// </summary>
-internal sealed class Win32WindowRestoreService : IWindowRestoreService
+public sealed class Win32WindowRestoreService : IWindowRestoreService
 {
     private const int ErrorAccessDenied = 5; // winerror.h ERROR_ACCESS_DENIED
     private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(500);
