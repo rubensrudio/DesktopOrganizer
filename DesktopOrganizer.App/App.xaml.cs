@@ -188,8 +188,13 @@ public partial class App : WpfApplication
         services.AddSingleton<IWindowRestoreService, Win32WindowRestoreService>();
 
         // --- Tray notification ----------------------------------------------
-        // Placeholder NoOp até TASK-021 implementar a versão real (balloon tips).
-        services.AddSingleton<ITrayNotificationService, NoOpTrayNotificationService>();
+        // TrayNotificationService precisa ser resolvido tanto pela interface
+        // (consumido pelos use cases) quanto pelo tipo concreto (consumido
+        // pelo TrayIconController, que chama Bind após criar o TaskbarIcon).
+        // Registramos a instância concreta como singleton e mapeamos a
+        // interface para a MESMA instância via factory.
+        services.AddSingleton<TrayNotificationService>();
+        services.AddSingleton<ITrayNotificationService>(sp => sp.GetRequiredService<TrayNotificationService>());
 
         // --- Use cases (transient: state-free, baratos) ---------------------
         services.AddTransient<CaptureSnapshotUseCase>();
@@ -227,23 +232,5 @@ public partial class App : WpfApplication
 
         config.ActiveProfileId = defaultProfile.Id;
         await configRepo.SaveAsync(config).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Implementação no-op de <see cref="ITrayNotificationService"/>.
-    /// Substituída pelo serviço real em TASK-021. Mantida interna ao App
-    /// para não poluir a Infrastructure com placeholders.
-    /// </summary>
-    private sealed class NoOpTrayNotificationService : ITrayNotificationService
-    {
-        public void ShowSuccess(string message)
-        {
-            // no-op (TASK-021 implementa balloon tip).
-        }
-
-        public void ShowResult(int restored, int failed)
-        {
-            // no-op (TASK-021 implementa balloon tip).
-        }
     }
 }
