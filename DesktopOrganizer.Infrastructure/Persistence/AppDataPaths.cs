@@ -15,6 +15,7 @@ public class AppDataPaths
     private const string ProfilesFolderName = "profiles";
     private const string SnapshotsFolderName = "snapshots";
     private const string ProfileFileName = "profile.json";
+    private const string ConfigFileName = "config.json";
     private const string SnapshotFilePrefix = "snapshot-";
     private const string SnapshotFileExtension = ".json";
 
@@ -52,6 +53,15 @@ public class AppDataPaths
     /// Diretório raiz da aplicação (<c>%APPDATA%\DesktopOrganizer\</c>).
     /// </summary>
     public string RootPath => _rootPath;
+
+    /// <summary>
+    /// Caminho do arquivo de configuração geral
+    /// (<c>%APPDATA%\DesktopOrganizer\config.json</c>). Não cria o diretório.
+    /// </summary>
+    public string GetConfigFilePath()
+    {
+        return Path.Combine(_rootPath, ConfigFileName);
+    }
 
     /// <summary>
     /// Diretório que agrupa todos os perfis
