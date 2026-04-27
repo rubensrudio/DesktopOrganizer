@@ -273,12 +273,22 @@ internal sealed class TrayIconController : IDisposable
         string name;
         try
         {
-            var dlg = new SnapshotNameDialog
+            var dlg = new SnapshotNameDialog();
+            // App é tray-only, sem MainWindow visível. Tentar setar Owner numa
+            // janela não-shown lança "Cannot set Owner Property to a Window that
+            // has not been shown previously". Só atribui se houver janela exibida.
+            var ownerCandidate = WpfApplication.Current?.Windows
+                .OfType<System.Windows.Window>()
+                .FirstOrDefault(w => w.IsLoaded && w.IsVisible);
+            if (ownerCandidate is not null)
             {
-                Owner = WpfApplication.Current?.Windows.Count > 0
-                    ? WpfApplication.Current.MainWindow
-                    : null,
-            };
+                dlg.Owner = ownerCandidate;
+            }
+            else
+            {
+                dlg.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen;
+                dlg.Topmost = true;
+            }
             if (dlg.ShowDialog() != true)
             {
                 // Usuário cancelou — aborta captura silenciosamente.
